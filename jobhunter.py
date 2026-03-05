@@ -1,14 +1,63 @@
-print("JobHunter AI Agent starting...")
-
+import re
 import requests
+
+def extract_years(text: str):
+    """
+    Returns a list of numbers found near 'year/years/yrs' patterns.
+    Examples matched:
+      - "3+ years"
+      - "2 years"
+      - "1-2 years"
+      - "1 to 5 years"
+    """
+    t = text.lower()
+
+    patterns = [
+        r"(\d+)\s*\+\s*(?:years|year|yrs|yr)",
+        r"(\d+)\s*-\s*(\d+)\s*(?:years|year|yrs|yr)",
+        r"(\d+)\s*to\s*(\d+)\s*(?:years|year|yrs|yr)",
+        r"(\d+)\s*(?:years|year|yrs|yr)"
+    ]
+
+    found = []
+    for p in patterns:
+        for m in re.finditer(p, t):
+            nums = [int(x) for x in m.groups() if x is not None]
+            found.append(nums)
+    return found
+
+
+def experience_in_range(text: str, min_years=1, max_years=5) -> bool:
+    """
+    Keeps job if it mentions experience within 1-5 years.
+    Rules:
+      - Keep if any requirement includes a number between 1 and 5 (inclusive)
+      - Reject if ONLY numbers are > 5 (e.g., 7+ years, 10 years)
+      - If no years mentioned, return False (we’ll improve later with AI)
+    """
+    years = extract_years(text)
+
+    if not years:
+        return False
+
+    # Flatten all numbers
+    nums = [n for group in years for n in group]
+
+    # If any number is within range, keep
+    if any(min_years <= n <= max_years for n in nums):
+        return True
+
+    # Otherwise, reject
+    return False
+
 
 def fetch_jobs():
     url = "https://remotive.com/api/remote-jobs"
-    response = requests.get(url)
+    response = requests.get(url, timeout=30)
+    response.raise_for_status()
     data = response.json()
-    
+
     jobs = data["jobs"]
-    
     filtered_jobs = []
 
     keywords = [
@@ -16,32 +65,28 @@ def fetch_jobs():
         "ux designer",
         "ui designer",
         "ux/ui",
-        "interaction designer"
+        "interaction designer",
+        "experience designer",
+        "ux researcher",
+        "product design"
     ]
 
     for job in jobs:
-        title = job["title"].lower()
+        title = (job.get("title") or "").lower()
+        description = (job.get("description") or "").lower()
 
-        if any(keyword in title for keyword in keywords):
-            filtered_jobs.append({
-                "title": job["title"],
-                "company": job["company_name"],
-                "url": job["url"]
-            })
+        # Title relevance
+        if not any(keyword in title for keyword in keywords):
+            continue
+
+        # Experience filter based on description text
+        if not experience_in_range(description, 1, 5):
+            continue
+
+        filtered_jobs.append({
+            "title": job.get("title", ""),
+            "company": job.get("company_name", ""),
+            "url": job.get("url", "")
+        })
 
     return filtered_jobs
-
-
-def main():
-    jobs = fetch_jobs()
-
-    print("Jobs found:")
-    
-    for job in jobs[:10]:
-        print(job["title"], "-", job["company"])
-        print(job["url"])
-        print()
-
-
-if __name__ == "__main__":
-    main()
