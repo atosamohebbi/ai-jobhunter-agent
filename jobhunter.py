@@ -27,30 +27,28 @@ def extract_years(text: str):
     return found
 
 
-def experience_in_range(text: str, min_years=1, max_years=5) -> bool:
+def experience_in_range(text: str, min_years: int = 1, max_years: int = 5) -> bool:
     """
-    Keeps job if it mentions experience within 1-5 years.
-    Rules:
-      - Keep if any requirement includes a number between 1 and 5 (inclusive)
-      - Reject if ONLY numbers are > 5 (e.g., 7+ years, 10 years)
-      - If no years mentioned, return False (we’ll improve later with AI)
+    Keep job if it mentions experience within 1–5 years.
+    - Keep if any number between 1 and 5 (inclusive) is found near year/years/yrs.
+    - If no years mentioned, keep for now (AI will refine later).
+    - Reject if only numbers are > 5.
     """
     years = extract_years(text)
 
-if not years:
-    # If no years mentioned, keep the job for now
-    return True
+    if not years:
+        # If no years mentioned, keep the job for now
+        return True
 
-# Flatten all numbers
-nums = [n for group in years for n in group]
+    # Flatten all numbers
+    nums = [n for group in years for n in group]
 
-# If any number is within range, keep
-if any(min_years <= n <= max_years for n in nums):
-    return True
+    # Keep if any number is within range
+    if any(min_years <= n <= max_years for n in nums):
+        return True
 
-# Otherwise, reject
-return False
-
+    # Otherwise reject
+    return False
 
 def fetch_jobs():
     url = "https://remotive.com/api/remote-jobs"
