@@ -1,115 +1,228 @@
+import os
 import re
-import requests
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from datetime import datetime
 
-def extract_years(text: str):
+import requests
+from dateutil import tz
+
+
+REMOTIVE_API = "https://remotive.com/api/remote-jobs"
+
+KEYWORDS = [
+    "product designer",
+    "ux designer",
+    "ui designer",
+    "ux/ui",
+    "interaction designer",
+    "experience designer",
+    "ux researcher",
+    "product design",
+    "product design lead",
+    "design lead",
+]
+
+# Runs only at these local hours (America/Los_Angeles)
+RUN_HOURS_PT = {7, 13}  # 7am and 1pm
+
+
+def now_pt() -> datetime:
+    return datetime.now(tz=tz.gettz("America/Los_Angeles"))
+
+
+def should_run_now() -> bool:
+    dt = now_pt()
+    return dt.minute == 0 and dt.hour in RUN_HOURS_PT
+
+
+def extract_year_phrases(text: str):
     """
-    Returns a list of numbers found near 'year/years/yrs' patterns.
-    Examples matched:
+    Extract experience signals like:
       - "3+ years"
       - "2 years"
       - "1-2 years"
       - "1 to 5 years"
+      - "minimum 3 years"
+    Returns list of tuples:
+      ("single", n) OR ("range", a, b) OR ("plus", n)
     """
     t = text.lower()
 
     patterns = [
-        r"(\d+)\s*\+\s*(?:years|year|yrs|yr)",
-        r"(\d+)\s*-\s*(\d+)\s*(?:years|year|yrs|yr)",
-        r"(\d+)\s*to\s*(\d+)\s*(?:years|year|yrs|yr)",
-        r"(\d+)\s*(?:years|year|yrs|yr)"
+        # range: 1-2 years, 1 – 2 yrs
+        r"\b(\d{1,2})\s*[-–]\s*(\d{1,2})\s*(?:\+?\s*)?(?:years|year|yrs|yr)\b",
+        # range: 1 to 5 years
+        r"\b(\d{1,2})\s*(?:to)\s*(\d{1,2})\s*(?:\+?\s*)?(?:years|year|yrs|yr)\b",
+        # plus: 3+ years
+        r"\b(\d{1,2})\s*\+\s*(?:years|year|yrs|yr)\b",
+        # "minimum 3 years", "at least 2 years"
+        r"\b(?:minimum|at\s+least)\s*(\d{1,2})\s*(?:years|year|yrs|yr)\b",
+        # single: 2 years
+        r"\b(\d{1,2})\s*(?:years|year|yrs|yr)\b",
     ]
 
     found = []
     for p in patterns:
         for m in re.finditer(p, t):
-            nums = [int(x) for x in m.groups() if x is not None]
-            found.append(nums)
+            groups = [g for g in m.groups() if g is not None]
+            if len(groups) == 2:
+                a, b = int(groups[0]), int(groups[1])
+                lo, hi = min(a, b), max(a, b)
+                found.append(("range", lo, hi))
+            elif len(groups) == 1:
+                n = int(groups[0])
+                if "+ " in m.group(0) or "+" in m.group(0) or "minimum" in m.group(0) or "at least" in m.group(0):
+                    found.append(("plus", n))
+                else:
+                    found.append(("single", n))
+
     return found
 
 
-def experience_in_range(text: str, min_years: int = 1, max_years: int = 5) -> bool:
+def matches_experience_1_to_5(description: str) -> bool:
     """
-    Keep job if it mentions experience within 1–5 years.
-    - Keep if any number between 1 and 5 (inclusive) is found near year/years/yrs.
-    - If no years mentioned, keep for now (AI will refine later).
-    - Reject if only numbers are > 5.
-    """
-    years = extract_years(text)
+    Keep jobs if:
+      - any explicit experience requirement overlaps [1, 5]
+      - OR no experience requirement is mentioned (keep for now)
 
-    if not years:
-        # If no years mentioned, keep the job for now
+    Reject only if:
+      - experience is mentioned AND all mentions clearly imply > 5 (e.g., 7+ years, 10 years)
+    """
+    signals = extract_year_phrases(description)
+
+    # If they didn't mention years at all, keep it (lots of postings omit exact years)
+    if not signals:
         return True
 
-    # Flatten all numbers
-    nums = [n for group in years for n in group]
+    # If ANY signal overlaps 1..5, keep
+    for s in signals:
+        if s[0] == "single":
+            n = s[1]
+            if 1 <= n <= 5:
+                return True
+        elif s[0] == "plus":
+            n = s[1]
+            # "3+ years" is acceptable because it includes 3–5 range as realistic target
+            if 1 <= n <= 5:
+                return True
+        elif s[0] == "range":
+            lo, hi = s[1], s[2]
+            # overlap check
+            if not (hi < 1 or lo > 5):
+                return True
 
-    # Keep if any number is within range
-    if any(min_years <= n <= max_years for n in nums):
-        return True
-
-    # Otherwise reject
+    # Otherwise, all experience mentions are outside 1..5
     return False
 
+
+def matches_title(title: str) -> bool:
+    t = (title or "").lower()
+    return any(k in t for k in KEYWORDS)
+
+
 def fetch_jobs():
-    url = "https://remotive.com/api/remote-jobs"
-    response = requests.get(url, timeout=30)
-    response.raise_for_status()
-    data = response.json()
+    r = requests.get(REMOTIVE_API, timeout=30)
+    r.raise_for_status()
+    data = r.json()
+    return data.get("jobs", [])
 
-    jobs = data["jobs"]
-    filtered_jobs = []
 
-    keywords = [
-        "product designer",
-        "ux designer",
-        "ui designer",
-        "ux/ui",
-        "interaction designer",
-        "experience designer",
-        "ux researcher",
-        "product design"
-    ]
-
+def filter_jobs(jobs):
+    kept = []
     for job in jobs:
-        title = (job.get("title") or "").lower()
-        description = (job.get("description") or "").lower()
+        title = job.get("title", "") or ""
+        desc = job.get("description", "") or ""
 
-        # Title relevance
-        if not any(keyword in title for keyword in keywords):
+        if not matches_title(title):
             continue
 
-        # Experience filter based on description text
-        if not experience_in_range(description, 1, 5):
+        if not matches_experience_1_to_5(desc):
             continue
 
-        filtered_jobs.append({
-            "title": job.get("title", ""),
-            "company": job.get("company_name", ""),
-            "url": job.get("url", "")
-        })
+        kept.append(
+            {
+                "title": title.strip(),
+                "company": (job.get("company_name", "") or "").strip(),
+                "url": (job.get("url", "") or "").strip(),
+            }
+        )
+    return kept
 
-    return filtered_jobs
 
-if __name__ == "__main__":
+def build_email_body(jobs):
+    dt = now_pt().strftime("%Y-%m-%d %I:%M %p PT")
+    lines = []
+    lines.append(f"JobHunter results — {dt}")
+    lines.append("")
+    lines.append(f"Jobs found: {len(jobs)}")
+    lines.append("")
+
+    if not jobs:
+        lines.append("No matching jobs in this run.")
+        return "\n".join(lines)
+
+    # Limit to avoid huge emails
+    jobs_to_send = jobs[:25]
+
+    for i, j in enumerate(jobs_to_send, start=1):
+        lines.append(f"{i}) {j['title']} — {j['company']}")
+        lines.append(f"   {j['url']}")
+        lines.append("")
+
+    if len(jobs) > len(jobs_to_send):
+        lines.append(f"(+ {len(jobs) - len(jobs_to_send)} more not shown)")
+
+    return "\n".join(lines)
+
+
+def send_email(subject: str, body: str):
+    gmail_user = os.getenv("GMAIL_USER")
+    gmail_app_password = os.getenv("GMAIL_APP_PASSWORD")
+    email_to = os.getenv("EMAIL_TO")
+
+    missing = [k for k, v in {
+        "GMAIL_USER": gmail_user,
+        "GMAIL_APP_PASSWORD": gmail_app_password,
+        "EMAIL_TO": email_to
+    }.items() if not v]
+
+    if missing:
+        print(f"Missing required env vars: {', '.join(missing)}")
+        return
+
+    msg = MIMEMultipart()
+    msg["From"] = gmail_user
+    msg["To"] = email_to
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain"))
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(gmail_user, gmail_app_password)
+        server.sendmail(gmail_user, [email_to], msg.as_string())
+
+
+def main():
     print("JobHunter AI Agent starting...")
 
+    # Gate to only 7am/1pm PT for scheduled runs
+    if os.getenv("GITHUB_ACTIONS") == "true":
+        if not should_run_now():
+            dt = now_pt().strftime("%Y-%m-%d %I:%M %p PT")
+            print(f"Not a send hour (7am/1pm PT). Current time: {dt}. Exiting.")
+            return
+
     jobs = fetch_jobs()
+    filtered = filter_jobs(jobs)
 
-    print(f"Jobs found: {len(jobs)}")
+    subject = f"JobHunter results — {now_pt().strftime('%a %b %d, %I:%M %p PT')}"
+    body = build_email_body(filtered)
 
-    for job in jobs[:20]:  # prints up to 20 jobs so logs stay readable
-        print(f"- {job['title']} — {job['company']}")
-        print(job["url"])
-        print("")
+    # Print to logs AND email
+    print(body)
+    send_email(subject, body)
+
 
 if __name__ == "__main__":
-    print("JobHunter AI Agent starting...")
-
-    jobs = fetch_jobs()
-
-    print(f"Jobs found: {len(jobs)}")
-
-    for job in jobs[:20]:  # print up to 20 so logs stay readable
-        print(f"- {job['title']} — {job['company']}")
-        print(job["url"])
-        print("")
+    main()
