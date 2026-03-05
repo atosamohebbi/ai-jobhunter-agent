@@ -37,7 +37,7 @@ def experience_in_range(text: str, min_years=1, max_years=5) -> bool:
     """
     years = extract_years(text)
 
-    if not years:
+   if not years:
     # If no years mentioned, keep the job for now
     return True
 
