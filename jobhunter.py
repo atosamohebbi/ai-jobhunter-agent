@@ -101,3 +101,15 @@ if __name__ == "__main__":
         print(f"- {job['title']} — {job['company']}")
         print(job["url"])
         print("")
+
+if __name__ == "__main__":
+    print("JobHunter AI Agent starting...")
+
+    jobs = fetch_jobs()
+
+    print(f"Jobs found: {len(jobs)}")
+
+    for job in jobs[:20]:  # print up to 20 so logs stay readable
+        print(f"- {job['title']} — {job['company']}")
+        print(job["url"])
+        print("")
