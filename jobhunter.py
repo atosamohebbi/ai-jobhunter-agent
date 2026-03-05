@@ -37,19 +37,19 @@ def experience_in_range(text: str, min_years=1, max_years=5) -> bool:
     """
     years = extract_years(text)
 
-   if not years:
+if not years:
     # If no years mentioned, keep the job for now
     return True
 
-    # Flatten all numbers
-    nums = [n for group in years for n in group]
+# Flatten all numbers
+nums = [n for group in years for n in group]
 
-    # If any number is within range, keep
-    if any(min_years <= n <= max_years for n in nums):
-        return True
+# If any number is within range, keep
+if any(min_years <= n <= max_years for n in nums):
+    return True
 
-    # Otherwise, reject
-    return False
+# Otherwise, reject
+return False
 
 
 def fetch_jobs():
