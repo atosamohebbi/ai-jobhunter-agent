@@ -89,3 +89,15 @@ def fetch_jobs():
         })
 
     return filtered_jobs
+
+if __name__ == "__main__":
+    print("JobHunter AI Agent starting...")
+
+    jobs = fetch_jobs()
+
+    print(f"Jobs found: {len(jobs)}")
+
+    for job in jobs[:20]:  # prints up to 20 jobs so logs stay readable
+        print(f"- {job['title']} — {job['company']}")
+        print(job["url"])
+        print("")
