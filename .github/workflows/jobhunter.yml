@@ -2,10 +2,9 @@ name: JobHunter Agent
 
 on:
   schedule:
-    - cron: "0 15 * * *"   # 7 AM PST
-    - cron: "0 21 * * *"   # 1 PM PST
+    - cron: "0 * * * *"   # every hour (we gate inside the script to 7am/1pm PT)
   workflow_dispatch:
-  
+
 jobs:
   run-agent:
     runs-on: ubuntu-latest
@@ -21,8 +20,13 @@ jobs:
 
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Run JobHunter
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
         run: |
           python jobhunter.py
