@@ -1,1 +1,47 @@
-PASTE YOUR RESUME TEXT HERE (copy/paste from your resume doc into this file)
+Atosa MohebbiPour
+Product Designer | UX/UI Designer
+Vancouver, BC | mohebbi.atosa@gmail.com | 506-897-1012 |  linkedin.com/in/atosamohebbi | atosamp.com (password: projects)
+Professional Summary
+UX/UI and Product Designer leading end-to-end design for web and mobile products. Strong background in user research, interaction design, and accessibility, with a sharp focus on translating complex requirements into intuitive, scalable experiences. Actively integrates AI tools across research, ideation, and UX writing to deliver faster outcomes while keeping user trust at the centre of every decision.
+Experience
+Rep Health, B2B Health-Tech, ON, Canada                                                           Mar 2024 - Present                                 
+Product Designer
+Led end-to-end product design and execution for a B2B health-tech platform, collaborating with engineering, product, and marketing teams
+Drove a full website redesign, increasing user satisfaction by 80%
+Conducted user research, including interviews, surveys, and usability testing, to inform product decisions and iterations
+Identified competitive gaps and product opportunities through market/competitors analysis
+Translated product strategy into scalable roadmaps, user flows, wireframes, and high-fidelity designs for the mobile app while maintaining consistency across all touchpoints. Improved engagement by 50%
+Designed with awareness of HTML/CSS constraints and responsive behavior, improving design-to-development alignment and reducing implementation friction
+HopStair, B2B/B2C Health-Tech, London, UK                                                     Sep 2022 – Feb 2024
+UX/UI Designer
+Conducted user research and competitive analysis to identify pain points and improvement opportunities, contributing to a 20% increase in user satisfaction and 40% increase in user success
+Designed wireframes for 10+ screens and facilitated usability testing with target users through A/B testing, card sorting, and time-on-task analysis to evaluate design and optimize information architecture
+Designed high-fidelity prototypes for 15+ screens and iterated based on user feedback
+Collaborated closely with design, engineering, and marketing teams to ideate, validate, and deliver user-centered solutions
+
+WYCSports, Sports Tech, ON, Canada                                                              Dec 2023 – Jan 2024
+UX/UI Designer
+Collaborated with the product team to understand product vision, goals, and requirements
+Conducted user and competitor research to identify usability issues and opportunities
+Designed 10+ high-fidelity screens for investor pitch presentations, translating concepts into clear visual narratives
+Skills & Tools
+Design & UX
+User-Centered Design, Accessibility (WCAG), Information Architecture, User Flows, Wireframing, Prototyping, Usability Testing, User Journey Mapping, Responsive Design, Mobile-First Design
+Research & Strategy
+User Research, Interviews, Surveys, Competitive Analysis, A/B Testing, Card Sorting, Time-on-Task Analysis, Research Synthesis, Data-Informed Design Decisions, Qualitative & Quantitative Analysis
+Product, AI Practices, & Collaboration
+End-to-End Product Design, Cross-Functional Collaboration, Design Systems, Agile/Scrum, Sprint Planning, Product Roadmapping, AI-Assisted Workflows, Prompt Engineering for Design, UX for AI Products, Designing for Trust & Uncertainty, AI Research Synthesis, Human-AI Interaction Design
+Tools
+Figma, Figma Make, v0, Framer, Adobe XD, Sketch, Adobe Illustrator, Adobe Photoshop, Hotjar, Maze, Canva, Claude, ChatGPT
+Education
+University of New Brunswick, NB, Canada                                                    Sep 2018 - April 2021
+M.Sc in Chemical Engineering 
+Conducted experimental research, designed studies, and analyzed quantitative data to generate insights
+Authored and published two peer-reviewed papers and a master’s thesis
+Certificates
+Google UX Design Professional Certificate
+Accessibility: How to Design for All  (WCAG 2.2)
+Generative AI for Everyone
+Information Architecture (IA) Fundamentals
+Responsive UX/UI Design in Figma and Building Design Systems in Figma from Scratch
+HTML & CSS for Designers
