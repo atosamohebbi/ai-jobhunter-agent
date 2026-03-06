@@ -2,10 +2,7 @@ name: JobHunter Agent
 
 on:
   schedule:
-    # 7:00 AM PT (PST) = 15:00 UTC
-    - cron: "0 15 * * *"
-    # 1:00 PM PT (PST) = 21:00 UTC
-    - cron: "0 21 * * *"
+    - cron: "*/10 * * * *"   # every 10 minutes
   workflow_dispatch:
 
 jobs:
