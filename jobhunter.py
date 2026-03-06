@@ -207,11 +207,7 @@ def main():
     print("JobHunter AI Agent starting...")
 
     # Gate to only 7am/1pm PT for scheduled runs
-    if os.getenv("GITHUB_ACTIONS") == "true":
-        if not should_run_now():
-            dt = now_pt().strftime("%Y-%m-%d %I:%M %p PT")
-            print(f"Not a send hour (7am/1pm PT). Current time: {dt}. Exiting.")
-            return
+    print("Skipping time check for testing")
 
     jobs = fetch_jobs()
     filtered = filter_jobs(jobs)
