@@ -34,7 +34,12 @@ def now_pt() -> datetime:
 
 def should_run_now() -> bool:
     dt = now_pt()
-    return dt.minute == 0 and dt.hour in RUN_HOURS_PT
+
+    # Allow a 15-minute send window in case GitHub starts a little late
+    if dt.hour in RUN_HOURS_PT and 0 <= dt.minute < 15:
+        return True
+
+    return False
 
 
 def extract_year_phrases(text: str):
@@ -207,7 +212,11 @@ def main():
     print("JobHunter AI Agent starting...")
 
     # Gate to only 7am/1pm PT for scheduled runs
-    print("Skipping time check for testing")
+    if os.getenv("GITHUB_ACTIONS") == "true":
+        if not should_run_now():
+            dt = now_pt().strftime("%Y-%m-%d %I:%M %p PT")
+            print(f"Not a send hour (7am/1pm PT). Current time: {dt}. Exiting.")
+            return
 
     jobs = fetch_jobs()
     filtered = filter_jobs(jobs)
