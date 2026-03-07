@@ -1,4 +1,5 @@
 import os
+import json
 import re
 import smtplib
 from email.mime.text import MIMEText
@@ -26,6 +27,7 @@ KEYWORDS = [
 
 # Runs only at these local hours (America/Los_Angeles)
 RUN_HOURS_PT = {7, 13}  # 7am and 1pm
+STATE_FILE = "state.json"
 
 
 def now_pt() -> datetime:
@@ -34,12 +36,7 @@ def now_pt() -> datetime:
 
 def should_run_now() -> bool:
     dt = now_pt()
-
-    # Allow a 15-minute send window in case GitHub starts a little late
-    if dt.hour in RUN_HOURS_PT and 0 <= dt.minute < 15:
-        return True
-
-    return False
+    return dt.hour in RUN_HOURS_PT
 
 
 def extract_year_phrases(text: str):
@@ -203,19 +200,52 @@ def send_email(subject: str, body: str):
     msg["Subject"] = subject
     msg.attach(MIMEText(body, "plain"))
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(gmail_user, gmail_app_password)
         server.sendmail(gmail_user, [email_to], msg.as_string())
+
+
+def load_state():
+    try:
+        with open(STATE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"last_sent_slot": ""}
+    except Exception:
+        return {"last_sent_slot": ""}
+
+
+def save_state(state):
+    with open(STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump(state, f, indent=2)
+
+
+def get_current_slot():
+    dt = now_pt()
+
+    if dt.hour == 7:
+        return dt.strftime("%Y-%m-%d-07")
+
+    if dt.hour == 13:
+        return dt.strftime("%Y-%m-%d-13")
+
+    return None
 
 
 def main():
     print("JobHunter AI Agent starting...")
 
-    # Gate to only 7am/1pm PT for scheduled runs
+    current_slot = get_current_slot()
+    state = load_state()
+
     if os.getenv("GITHUB_ACTIONS") == "true":
         if not should_run_now():
             dt = now_pt().strftime("%Y-%m-%d %I:%M %p PT")
             print(f"Not a send hour (7am/1pm PT). Current time: {dt}. Exiting.")
+            return
+
+        if current_slot and state.get("last_sent_slot") == current_slot:
+            print(f"Already sent email for slot: {current_slot}. Exiting.")
             return
 
     jobs = fetch_jobs()
@@ -224,10 +254,13 @@ def main():
     subject = f"JobHunter results — {now_pt().strftime('%a %b %d, %I:%M %p PT')}"
     body = build_email_body(filtered)
 
-    # Print to logs AND email
     print(body)
     send_email(subject, body)
 
+    if current_slot:
+        state["last_sent_slot"] = current_slot
+        save_state(state)
+        print(f"Saved sent slot: {current_slot}")
 
 if __name__ == "__main__":
     main()
