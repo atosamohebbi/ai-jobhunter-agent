@@ -111,7 +111,7 @@ KEYWORDS = [
     "design lead",
 ]
 
-RUN_HOURS_PT = {7, 13}
+RUN_HOURS_PT = {7, 8, 13, 14}
 STATE_FILE = "state.json"
 
 REQUEST_HEADERS = {
