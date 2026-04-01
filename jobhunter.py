@@ -223,14 +223,15 @@ def main():
     current_slot = get_current_slot()
     state = load_state()
 
-    if os.getenv("GITHUB_ACTIONS") == "true":
-        if not should_run_now():
-            print("Not a send hour. Exiting.")
-            return
-
-        if current_slot and state.get("last_sent_slot") == current_slot:
-            print("Already sent. Exiting.")
-            return
+    # TEMP: disable schedule check so we can test anytime
+    # if os.getenv("GITHUB_ACTIONS") == "true":
+    #     if not should_run_now():
+    #         print("Not a send hour. Exiting.")
+    #         return
+    #
+    #     if current_slot and state.get("last_sent_slot") == current_slot:
+    #         print("Already sent. Exiting.")
+    #         return
 
     jobs = fetch_jobs()
     filtered = filter_jobs(jobs)
