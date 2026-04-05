@@ -1,0 +1,38 @@
+[
+  {
+    "title": "Senior Product Designer",
+    "company": "Stripe",
+    "url": "https://stripe.com/jobs",
+    "category": "product",
+    "score": 85,
+    "reasons": [
+      "Matches your preferred role",
+      "Strong product design focus",
+      "B2B experience relevant"
+    ]
+  },
+  {
+    "title": "Product Designer",
+    "company": "Linear",
+    "url": "https://linear.app/jobs",
+    "category": "product",
+    "score": 95,
+    "reasons": [
+      "Perfect experience level",
+      "Strong product culture",
+      "Modern SaaS environment"
+    ]
+  },
+  {
+    "title": "UX/UI Designer",
+    "company": "Vercel",
+    "url": "https://vercel.com/careers",
+    "category": "ux",
+    "score": 80,
+    "reasons": [
+      "Strong UX alignment",
+      "Frontend exposure",
+      "Modern tooling"
+    ]
+  }
+]
